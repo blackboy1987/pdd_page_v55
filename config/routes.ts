@@ -10,12 +10,12 @@
             name: 'login',
             path: '/user/login',
             component: '../layouts/UserLayout',
-            routes:[
+            routes: [
               {
                 path: '/user/login',
                 component: './User/login',
-              }
-            ]
+              },
+            ],
           },
           {
             path: '/user/register',
@@ -26,7 +26,7 @@
                 name: 'register',
                 component: './User/register',
               },
-            ]
+            ],
           },
         ],
       },
@@ -39,15 +39,15 @@
     component: './Welcome',
   },
   {
-    path: '/admin',
+    path: '/product',
     name: '搬家上货',
     icon: 'crown',
     routes: [
       {
-        path: '/admin/sub-page1',
+        path: '/product/copy',
         name: '商品复制',
         icon: 'smile',
-        component: './Welcome',
+        component: './product/copy',
       },
       {
         path: '/admin/sub-page2',
