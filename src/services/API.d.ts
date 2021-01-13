@@ -12,11 +12,15 @@ declare namespace API {
     userid?: string;
     access?: 'user' | 'guest' | 'admin';
     unreadCount?: number;
+    username?: string;
+    id?: number;
   };
 
   export type LoginStateType = {
     status?: 'ok' | 'error';
     type?: string;
+    content?: string;
+    token?: string;
   };
 
   export type NoticeIconData = {
@@ -32,4 +36,6 @@ declare namespace API {
     extra: any;
     status: string;
   };
+
+  export type Response = {};
 }
