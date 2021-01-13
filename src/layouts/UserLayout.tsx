@@ -1,42 +1,27 @@
 import type { MenuDataItem } from '@ant-design/pro-layout';
-import { getPageTitle } from '@ant-design/pro-layout';
-import { Helmet, HelmetProvider } from 'react-helmet-async';
-import { useIntl } from 'umi';
+import { HelmetProvider } from 'react-helmet-async';
 import React from 'react';
 import styles from './UserLayout.less';
-import {Header} from "antd/es/layout/layout";
+import { Header } from 'antd/es/layout/layout';
 
 export type UserLayoutProps = {
   breadcrumbNameMap: Record<string, MenuDataItem>;
 };
 
 const UserLayout: React.FC<UserLayoutProps> = (props) => {
-  const {
-    children,
-  } = props;
-  const { formatMessage } = useIntl();
-  const title = getPageTitle({
-    formatMessage,
-    ...props,
-  });
+  const { children } = props;
   return (
     <HelmetProvider>
-      <Helmet>
-        <title>{title}</title>
-        <meta name="description" content={title} />
-      </Helmet>
       <div className={styles.container}>
         <Header className={styles.header}>
           <a className={styles.logo}>
-            <img src='https://bootx-pdd.oss-cn-hangzhou.aliyuncs.com/logo1.png'/>
+            <img src="https://bootx-pdd.oss-cn-hangzhou.aliyuncs.com/logo1.png" />
           </a>
           <a className={styles.help}>
-            <img src='https://bootx-pdd.oss-cn-hangzhou.aliyuncs.com/qq-group-logo.png' />
+            <img src="https://bootx-pdd.oss-cn-hangzhou.aliyuncs.com/qq-group-logo.png" />
           </a>
         </Header>
-        <div className={styles.content}>
-          {children}
-        </div>
+        <div className={styles.content}>{children}</div>
       </div>
     </HelmetProvider>
   );

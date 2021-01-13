@@ -1,16 +1,17 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer } from 'antd';
+import {Button, message, Input, Drawer, Empty, Divider} from 'antd';
 import React, { useState, useRef } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
+import { ModalForm, ProFormText } from '@ant-design/pro-form';
 import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
 import type { TableListItem } from './data.d';
-import { queryRule, updateRule, addRule, removeRule } from './service';
+import { list, update, save, remove } from './service';
+import AddForm from "@/pages/storeManager/storeCategory/components/AddForm";
 /**
  * 添加节点
  * @param fields
@@ -20,7 +21,7 @@ const handleAdd = async (fields: TableListItem) => {
   const hide = message.loading('正在添加');
 
   try {
-    await addRule({ ...fields });
+    await save({ ...fields });
     hide();
     message.success('添加成功');
     return true;
@@ -39,7 +40,7 @@ const handleUpdate = async (fields: FormValueType) => {
   const hide = message.loading('正在配置');
 
   try {
-    await updateRule({
+    await update({
       name: fields.name,
       desc: fields.desc,
       key: fields.key,
@@ -63,7 +64,7 @@ const handleRemove = async (selectedRows: TableListItem[]) => {
   if (!selectedRows) return true;
 
   try {
-    await removeRule({
+    await remove({
       key: selectedRows.map((row) => row.key),
     });
     hide();
@@ -93,9 +94,13 @@ const TableList: React.FC = () => {
 
   const columns: ProColumns<TableListItem>[] = [
     {
-      title: '规则名称',
+      title: '分组名',
       dataIndex: 'name',
-      tip: '规则名称是唯一的 key',
+    },
+    {
+      title: '店铺数',
+      dataIndex: 'desc',
+      width:70,
       render: (dom, entity) => {
         return (
           <a
@@ -110,94 +115,59 @@ const TableList: React.FC = () => {
       },
     },
     {
-      title: '描述',
-      dataIndex: 'desc',
-      valueType: 'textarea',
+      title: '默认',
+      dataIndex: 'isDefault',
+      width: 50,
+      renderText: text=>text ? '是':'否'
     },
     {
-      title: '服务调用次数',
-      dataIndex: 'callNo',
-      sorter: true,
-      hideInForm: true,
-      renderText: (val: string) =>
-        `${val} 万 `,
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      hideInForm: true,
-      valueEnum: {
-        0: {
-          text: '关闭',
-          status: 'Default',
-        },
-        1: {
-          text: '运行中',
-          status: 'Processing',
-        },
-        2: {
-          text: '已上线',
-          status: 'Success',
-        },
-        3: {
-          text: '异常',
-          status: 'Error',
-        },
-      },
-    },
-    {
-      title: '上次调度时间',
-      sorter: true,
-      dataIndex: 'updatedAt',
-      valueType: 'dateTime',
-      renderFormItem: (item, { defaultRender, ...rest }, form) => {
-        const status = form.getFieldValue('status');
-
-        if (`${status}` === '0') {
-          return false;
-        }
-
-        if (`${status}` === '3') {
-          return (
-            <Input
-              {...rest}
-              placeholder='请输入异常原因'
-            />
-          );
-        }
-
-        return defaultRender(item);
-      },
+      title: '创建日期',
+      dataIndex: 'createdDate',
+      valueType:'dateTime',
+      width:170,
     },
     {
       title: '操作',
       dataIndex: 'option',
       valueType: 'option',
-      render: (_, record) => [
-        <a
-          key="config"
-          onClick={() => {
-            handleUpdateModalVisible(true);
-            setCurrentRow(record);
-          }}
-        >
-          配置
-        </a>,
-        <a key="subscribeAlert" href="https://procomponents.ant.design/">
-          订阅警报
-        </a>,
-      ],
+      width:100,
+      renderText: (text,record)=>{
+        return (
+          <>
+            <a
+              key="config"
+              onClick={() => {
+                handleUpdateModalVisible(true);
+                setCurrentRow(record);
+              }}
+            >
+              修改
+            </a>
+            {
+              record.isDefault ? null : (
+                <>
+                  <Divider type='vertical' />
+                  <a key="subscribeAlert" href="https://procomponents.ant.design/">
+                    删除
+                  </a>
+                </>
+              )
+            }
+          </>
+        )
+      }
     },
   ];
   return (
     <PageContainer>
       <ProTable<TableListItem>
-        headerTitle='查询表格'
+        locale={{emptyText:<Empty description='暂无数据' />}}
         actionRef={actionRef}
-        rowKey="key"
-        search={{
-          labelWidth: 120,
-        }}
+        rowKey="id"
+        size='small'
+        bordered
+        search={false}
+        options={false}
         toolBarRender={() => [
           <Button
             type="primary"
@@ -209,7 +179,7 @@ const TableList: React.FC = () => {
             <PlusOutlined /> 新建
           </Button>,
         ]}
-        request={(params, sorter, filter) => queryRule({ ...params, sorter, filter })}
+        request={(params, sorter, filter) => list({ ...params, sorter, filter })}
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => {
@@ -248,43 +218,39 @@ const TableList: React.FC = () => {
           <Button type="primary">批量审批</Button>
         </FooterToolbar>
       )}
-      <ModalForm
-        title='新建规则'
-        width="400px"
-        visible={createModalVisible}
-        onVisibleChange={handleModalVisible}
-        onFinish={async (value) => {
-          const success = await handleAdd(value as TableListItem);
+      {
+        createModalVisible ? (
+          <AddForm
+            onCancel={()=>{
+              handleModalVisible(false)
+              if (actionRef.current) {
+                actionRef.current.reload();
+              }
+            }}
+            onSubmit={ async (values)=>{
+              const result = await save(values);
+              if(result.type==='success'){
+                handleModalVisible(false)
+                if (actionRef.current) {
+                  actionRef.current.reload();
+                }
+                message.success(result.content);
+              }else{
+                message.error(result.content);
+              }
 
-          if (success) {
-            handleModalVisible(false);
+            }}
+            visible={createModalVisible}
+          />
+        ) : null
+      }
 
-            if (actionRef.current) {
-              actionRef.current.reload();
-            }
-          }
-        }}
-      >
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: '规则名称为必填项',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormTextArea width="md" name="desc" />
-      </ModalForm>
       <UpdateForm
         onSubmit={async (value) => {
           const success = await handleUpdate(value);
-
           if (success) {
             handleUpdateModalVisible(false);
             setCurrentRow(undefined);
-
             if (actionRef.current) {
               actionRef.current.reload();
             }
