@@ -1,5 +1,5 @@
 
-import {Avatar, Input, Tag} from 'antd';
+import {Avatar, Button, DatePicker, Form, Input, Select, Tag} from 'antd';
 import React, {useEffect, useRef, useState} from 'react';
 import { PageContainer } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
@@ -15,6 +15,8 @@ import tMLogo from '@/asserts/tm_logo.png';
 import vDianLogo from '@/asserts/vdain_logo.jpg';
 import vipLogo from '@/asserts/vip_logo.jpeg';
 import suningLogo from '@/asserts/suning.png';
+
+import styles from './index.less';
 
 const List: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -100,7 +102,8 @@ const List: React.FC = () => {
     {
       title: '分类',
       dataIndex: 'desc',
-      valueType: 'textarea',
+      width:100,
+      renderText:()=><span>毛衣/针织衫</span>
     },
     {
       title: '状态',
@@ -152,6 +155,40 @@ const List: React.FC = () => {
   ];
   return (
     <PageContainer title={false}>
+      <div className={styles.search}>
+        <Form layout='inline'>
+          <Form.Item label='宝贝标题'>
+            <Input />
+          </Form.Item>
+          <Form.Item label='宝贝ID'>
+            <Input />
+          </Form.Item>
+          <Form.Item label='状态'>
+            <Select style={{width:100}}>
+              <Select.Option value=''>全部</Select.Option>
+              <Select.Option value='1'>待上传</Select.Option>
+              <Select.Option value='2'>上传成功</Select.Option>
+              <Select.Option value='3'>已清理</Select.Option>
+              <Select.Option value='4'>上传错误</Select.Option>
+              <Select.Option value='5'>上传中</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item label='抓取时间'>
+            <DatePicker.RangePicker placeholder={['开始时间','结束时间']} />
+          </Form.Item>
+          <Form.Item>
+            <Button type='primary'>搜索</Button>
+          </Form.Item>
+        </Form>
+      </div>
+      <div className={styles.tool}>
+        <div className={styles.left}>
+          <Button disabled={selectedRowsState.length===0}>修改标题</Button>
+          <Button disabled={selectedRowsState.length===0}>修改描述</Button>
+          <Button disabled={selectedRowsState.length===0}>批量清除</Button>
+          <Button disabled={selectedRowsState.length===0}>发布到拼多多</Button>
+        </div>
+      </div>
       <ProTable<TableListItem>
         size='small'
         bordered
