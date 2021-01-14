@@ -50,10 +50,10 @@
         component: './product/copy',
       },
       {
-        path: '/admin/sub-page2',
+        path: '/product/list',
         name: '商品复制列表',
         icon: 'smile',
-        component: './Welcome',
+        component: './product/list',
       },
       {
         path: '/admin/sub-page3',
