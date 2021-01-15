@@ -1,10 +1,10 @@
-import { Avatar, Input, Tag, Form, Select, Button, DatePicker, message, Modal } from 'antd';
+import { Avatar, Input, Tag, Form, Button, DatePicker, message, Modal } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import type { TableListItem } from './data.d';
-import { list, remove } from './service';
+import { list, reset } from './service';
 import { defaultPaginationResult, PaginationResult, parseFormValues } from '@/utils/common';
 
 import oneSixEightEightLogo from '@/asserts/1688_logo.png';
@@ -16,7 +16,6 @@ import vipLogo from '@/asserts/vip_logo.jpeg';
 import suningLogo from '@/asserts/suning.png';
 
 import styles from './index.less';
-import ChangeTitle from '@/pages/product/list/components/ChangeTitle';
 
 const List: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -25,7 +24,6 @@ const List: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<PaginationResult>(defaultPaginationResult);
   const [selectedRowsState, setSelectedRows] = useState<TableListItem[]>([]);
-  const [changeTitleModalVisible, setChangeTitleModalVisible] = useState<boolean>(false);
 
   const load = async (params: { [key: string]: any }) => {
     setLoading(true);
@@ -49,7 +47,7 @@ const List: React.FC = () => {
     load({});
   };
 
-  const clear = (record?: TableListItem) => {
+  const undo = (record?: TableListItem) => {
     const ids = record ? [record.id] : selectedRowsState.map((item) => item.id);
     if (ids.length === 0) {
       message.warn('请选择需要操作的数据');
@@ -62,7 +60,7 @@ const List: React.FC = () => {
       okText: '确定',
       cancelText: '取消',
       onOk: async () => {
-        const result = await remove({
+        const result = await reset({
           ids: ids.join(','),
         });
         if (result.type === 'success') {
@@ -167,7 +165,7 @@ const List: React.FC = () => {
             <a href={record.url}>查看源</a>
           </div>
           <div>
-            <a onClick={() => clear(record)}>清理</a>
+            <a onClick={() => undo(record)}>恢复</a>
           </div>
         </>
       ),
@@ -189,15 +187,6 @@ const List: React.FC = () => {
           <Form.Item label="宝贝ID" name="sn">
             <Input />
           </Form.Item>
-          <Form.Item label="状态" name="status">
-            <Select style={{ width: 100 }}>
-              <Select.Option value="">全部</Select.Option>
-              <Select.Option value="1">待上传</Select.Option>
-              <Select.Option value="2">上传成功</Select.Option>
-              <Select.Option value="4">上传错误</Select.Option>
-              <Select.Option value="5">上传中</Select.Option>
-            </Select>
-          </Form.Item>
           <Form.Item label="抓取时间" name="rangeDate">
             <DatePicker.RangePicker placeholder={['开始时间', '结束时间']} />
           </Form.Item>
@@ -210,23 +199,9 @@ const List: React.FC = () => {
       </div>
       <div className={styles.tool}>
         <div className={styles.left}>
-          <Button
-            disabled={selectedRowsState.length === 0}
-            onClick={() => {
-              message.destroy();
-              if (selectedRowsState.length <= 0) {
-                message.error('请选择需要操作的数据');
-              } else {
-                setChangeTitleModalVisible(true);
-              }
-            }}
-          >
-            修改标题
+          <Button disabled={selectedRowsState.length === 0} onClick={() => undo()}>
+            批量恢复
           </Button>
-          <Button disabled={selectedRowsState.length === 0} onClick={() => clear()}>
-            批量清除
-          </Button>
-          <Button disabled={selectedRowsState.length === 0}>发布到拼多多</Button>
         </div>
       </div>
       <ProTable<TableListItem>
@@ -255,15 +230,6 @@ const List: React.FC = () => {
               pageSize,
             });
           },
-        }}
-      />
-
-      <ChangeTitle
-        visible={changeTitleModalVisible}
-        recordIds={selectedRowsState.map((item) => item.id)}
-        onClose={() => setChangeTitleModalVisible(false)}
-        callback={() => {
-          setChangeTitleModalVisible(false);
         }}
       />
     </PageContainer>

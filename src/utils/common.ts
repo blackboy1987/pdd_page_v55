@@ -44,3 +44,18 @@ export const parsePagination = (paginationResponse: PaginationResponse): Paginat
     total,
   };
 };
+
+export const parseFormValues = (formValues: { [key: string]: any }): { [key: string]: string } => {
+  let newFormValues = {
+    ...formValues,
+  };
+  if (formValues.rangeDate) {
+    newFormValues = {
+      ...newFormValues,
+      beginDate: newFormValues.rangeDate[0].format('YYYY-MM-DD 00:00:00'),
+      endDate: newFormValues.rangeDate[1].format('YYYY-MM-DD 00:00:00'),
+    };
+    delete newFormValues.rangeDate;
+  }
+  return newFormValues;
+};

@@ -56,6 +56,12 @@
         component: './product/list',
       },
       {
+        path: '/product/list1',
+        name: '商品清理列表',
+        icon: 'smile',
+        component: './product/list1',
+      },
+      {
         path: '/admin/sub-page3',
         name: '发布记录',
         icon: 'smile',
