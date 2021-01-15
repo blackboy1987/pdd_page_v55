@@ -1,10 +1,10 @@
-import { Avatar, Input, Tag, Form, Select, Button, DatePicker, message, Modal } from 'antd';
+import { Avatar, Input, Tag, Form, Select, Button, DatePicker, message, Modal, Empty } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import type { TableListItem } from './data.d';
-import { list, remove } from './service';
+import { crawler, list, remove } from './service';
 import { defaultPaginationResult, PaginationResult, parseFormValues } from '@/utils/common';
 
 import oneSixEightEightLogo from '@/asserts/1688_logo.png';
@@ -26,16 +26,22 @@ const List: React.FC = () => {
   const [data, setData] = useState<PaginationResult>(defaultPaginationResult);
   const [selectedRowsState, setSelectedRows] = useState<TableListItem[]>([]);
   const [changeTitleModalVisible, setChangeTitleModalVisible] = useState<boolean>(false);
+  const [formValues, setFormValues] = useState<{ [key: string]: string }>({});
 
   const load = async (params: { [key: string]: any }) => {
     setLoading(true);
     const result = await list({
+      ...formValues,
       ...parseFormValues(form.getFieldsValue()),
       ...params,
     });
     setSelectedRows([]);
     setData(result);
     setLoading(false);
+    setFormValues({
+      ...parseFormValues(form.getFieldsValue()),
+      ...params,
+    });
   };
 
   useEffect(() => {
@@ -58,7 +64,7 @@ const List: React.FC = () => {
 
     Modal.confirm({
       title: '确定要清理这些宝贝吗?',
-      content: '清理后可在已清理状态下找到这些宝贝',
+      content: '清理后可在商品清理列表下找到这些宝贝',
       okText: '确定',
       cancelText: '取消',
       onOk: async () => {
@@ -138,11 +144,27 @@ const List: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       width: 80,
-      renderText: (text) => {
+      renderText: (text, record) => {
         if (text === 0) {
           return <Tag color="#2db7f5">采集中</Tag>;
         }
         if (text === 1) {
+          if (record.publishStatus === 10) {
+            return <Tag color="#55acee">待发布</Tag>;
+          }
+          if (record.publishStatus === 11) {
+            return <Tag color="#cd201f">发布中</Tag>;
+          }
+          if (record.publishStatus === 12) {
+            return <Tag color="#3b5999">发布成功</Tag>;
+          }
+          if (record.publishStatus === 13) {
+            return <Tag color="#55acee">发布失败</Tag>;
+          }
+          if (record.publishStatus === 14) {
+            return <Tag color="#108ee9">草稿箱</Tag>;
+          }
+
           return <Tag color="#87d068">采集完成</Tag>;
         }
         if (text === 2) {
@@ -169,6 +191,34 @@ const List: React.FC = () => {
           <div>
             <a onClick={() => clear(record)}>清理</a>
           </div>
+          <div>
+            <a
+              onClick={() => {
+                if (record.url) {
+                  Modal.confirm({
+                    title: '确认重新抓取商品信息？',
+                    content: '该操作将会重置商品全部数据，请谨慎操作！！！',
+                    okText: '确认',
+                    cancelText: '取消',
+                    onOk: async () => {
+                      const result = await crawler({
+                        id: record.id,
+                      });
+                      if (result.type === 'success') {
+                        load(formValues);
+                      } else {
+                        message.error(result.content);
+                      }
+                    },
+                  });
+                } else {
+                  message.error('源地址不存在，无法抓取');
+                }
+              }}
+            >
+              重抓
+            </a>
+          </div>
         </>
       ),
     },
@@ -180,7 +230,7 @@ const List: React.FC = () => {
           layout="inline"
           form={form}
           initialValues={{
-            status: '',
+            publishStatus: '',
           }}
         >
           <Form.Item label="宝贝标题" name="name">
@@ -189,13 +239,14 @@ const List: React.FC = () => {
           <Form.Item label="宝贝ID" name="sn">
             <Input />
           </Form.Item>
-          <Form.Item label="状态" name="status">
+          <Form.Item label="状态" name="publishStatus">
             <Select style={{ width: 100 }}>
               <Select.Option value="">全部</Select.Option>
-              <Select.Option value="1">待上传</Select.Option>
-              <Select.Option value="2">上传成功</Select.Option>
-              <Select.Option value="4">上传错误</Select.Option>
-              <Select.Option value="5">上传中</Select.Option>
+              <Select.Option value="10">待发布</Select.Option>
+              <Select.Option value="11">发布中</Select.Option>
+              <Select.Option value="12">发布成功</Select.Option>
+              <Select.Option value="13">发布失败</Select.Option>
+              <Select.Option value="14">草稿箱</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item label="抓取时间" name="rangeDate">
@@ -256,6 +307,9 @@ const List: React.FC = () => {
             });
           },
         }}
+        locale={{
+          emptyText: <Empty description="暂无数据" />,
+        }}
       />
 
       <ChangeTitle
@@ -264,6 +318,7 @@ const List: React.FC = () => {
         onClose={() => setChangeTitleModalVisible(false)}
         callback={() => {
           setChangeTitleModalVisible(false);
+          load({});
         }}
       />
     </PageContainer>

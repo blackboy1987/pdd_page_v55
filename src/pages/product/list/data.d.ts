@@ -8,6 +8,7 @@ export type TableListItem = {
   desc: string;
   callNo: number;
   status: number;
+  publishStatus: number;
   createdDate: Date;
   createdAt: Date;
   progress: number;

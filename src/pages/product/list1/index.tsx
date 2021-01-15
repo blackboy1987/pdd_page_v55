@@ -1,4 +1,4 @@
-import { Avatar, Input, Tag, Form, Button, DatePicker, message, Modal } from 'antd';
+import { Avatar, Input, Form, Button, DatePicker, message, Modal, Empty } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
@@ -55,8 +55,8 @@ const List: React.FC = () => {
     }
 
     Modal.confirm({
-      title: '确定要清理这些宝贝吗?',
-      content: '清理后可在已清理状态下找到这些宝贝',
+      title: '确定要恢复这些宝贝吗?',
+      content: '清理后可在宝贝复制列表下找到这些宝贝',
       okText: '确定',
       cancelText: '取消',
       onOk: async () => {
@@ -133,23 +133,6 @@ const List: React.FC = () => {
       dataIndex: 'productCategoryName',
     },
     {
-      title: '状态',
-      dataIndex: 'status',
-      width: 80,
-      renderText: (text) => {
-        if (text === 0) {
-          return <Tag color="#2db7f5">采集中</Tag>;
-        }
-        if (text === 1) {
-          return <Tag color="#87d068">采集完成</Tag>;
-        }
-        if (text === 2) {
-          return <Tag color="#f50">采集失败</Tag>;
-        }
-        return <Tag>{text}</Tag>;
-      },
-    },
-    {
       title: '采集时间',
       dataIndex: 'createdDate',
       valueType: 'dateTime',
@@ -162,7 +145,9 @@ const List: React.FC = () => {
       renderText: (_, record) => (
         <>
           <div>
-            <a href={record.url}>查看源</a>
+            <a href={record.url} target="_blank">
+              查看源
+            </a>
           </div>
           <div>
             <a onClick={() => undo(record)}>恢复</a>
@@ -230,6 +215,9 @@ const List: React.FC = () => {
               pageSize,
             });
           },
+        }}
+        locale={{
+          emptyText: <Empty description="暂无数据" />,
         }}
       />
     </PageContainer>

@@ -22,3 +22,9 @@ export async function remove(params?: { [key: string]: any }) {
     data: params,
   });
 }
+export async function crawler(params: { id: number }) {
+  return request(`${Constants.baseUrl}product/crawler`, {
+    method: 'POST',
+    data: params,
+  });
+}
