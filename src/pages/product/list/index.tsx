@@ -17,11 +17,14 @@ import suningLogo from '@/asserts/suning.png';
 
 import styles from './index.less';
 import ChangeTitle from '@/pages/product/list/components/ChangeTitle';
+import Edit from "@/pages/product/list/components/Edit";
 
 const List: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [form] = Form.useForm();
 
+  const [currentRecord, setCurrentRecord] = useState<TableListItem>({});
+  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<PaginationResult>(defaultPaginationResult);
   const [selectedRowsState, setSelectedRows] = useState<TableListItem[]>([]);
@@ -74,6 +77,11 @@ const List: React.FC = () => {
       },
     });
   };
+
+  const edit=(record: TableListItem)=>{
+    setCurrentRecord(record);
+    setEditModalVisible(true);
+  }
 
   const columns: ProColumns<TableListItem>[] = [
     {
@@ -169,6 +177,9 @@ const List: React.FC = () => {
           <div>
             <a onClick={() => clear(record)}>清理</a>
           </div>
+          <div>
+            <a onClick={() => edit(record)}>bianji </a>
+          </div>
         </>
       ),
     },
@@ -257,15 +268,26 @@ const List: React.FC = () => {
           },
         }}
       />
-
-      <ChangeTitle
-        visible={changeTitleModalVisible}
-        recordIds={selectedRowsState.map((item) => item.id)}
-        onClose={() => setChangeTitleModalVisible(false)}
-        callback={() => {
-          setChangeTitleModalVisible(false);
-        }}
-      />
+      {
+        changeTitleModalVisible ? (
+          <ChangeTitle
+            visible={changeTitleModalVisible}
+            recordIds={selectedRowsState.map((item) => item.id)}
+            onClose={() => setChangeTitleModalVisible(false)}
+            callback={() => {
+              setChangeTitleModalVisible(false);
+            }}
+          />
+        ) : null
+      }
+      {
+        editModalVisible ? (
+          <Edit visible={editModalVisible} currentId={currentRecord.id} recordIds={data.data.map(item=>item.id)} close={()=>{
+            setEditModalVisible(false);
+            setCurrentRecord({});
+          }} />
+        ) : null
+      }
     </PageContainer>
   );
 };
