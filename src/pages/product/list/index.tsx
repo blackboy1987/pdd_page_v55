@@ -16,9 +16,9 @@ import { PageContainer } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import type { TableListItem } from './data.d';
-import { crawler, list, remove, publish } from './service';
+import { crawler, list, remove, publish, listStoreTree } from './service';
 import { defaultPaginationResult, PaginationResult, parseFormValues } from '@/utils/common';
-
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 import oneSixEightEightLogo from '@/asserts/1688_logo.png';
 import jdLogo from '@/asserts/jd_logo.png';
 import taoBaoLogo from '@/asserts/taobao_logo.png';
@@ -29,7 +29,8 @@ import suningLogo from '@/asserts/suning.png';
 
 import styles from './index.less';
 import ChangeTitle from '@/pages/product/list/components/ChangeTitle';
-import Edit from "@/pages/product/list/components/Edit";
+import Edit from '@/pages/product/list/components/Edit';
+import { StoreTree } from '@/pages/product/upload/list/data';
 
 const List: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -133,10 +134,10 @@ const List: React.FC = () => {
     });
   };
 
-  const edit=(record: TableListItem)=>{
+  const edit = (record: TableListItem) => {
     setCurrentRecord(record);
     setEditModalVisible(true);
-  }
+  };
 
   const columns: ProColumns<TableListItem>[] = [
     {
@@ -436,26 +437,27 @@ const List: React.FC = () => {
           emptyText: <Empty description="暂无数据" />,
         }}
       />
-      {
-        changeTitleModalVisible ? (
-          <ChangeTitle
-            visible={changeTitleModalVisible}
-            recordIds={selectedRowsState.map((item) => item.id)}
-            onClose={() => setChangeTitleModalVisible(false)}
-            callback={() => {
-              setChangeTitleModalVisible(false);
-            }}
-          />
-        ) : null
-      }
-      {
-        editModalVisible ? (
-          <Edit visible={editModalVisible} currentId={currentRecord.id} recordIds={data.data.map(item=>item.id)} close={()=>{
+      {changeTitleModalVisible ? (
+        <ChangeTitle
+          visible={changeTitleModalVisible}
+          recordIds={selectedRowsState.map((item) => item.id)}
+          onClose={() => setChangeTitleModalVisible(false)}
+          callback={() => {
+            setChangeTitleModalVisible(false);
+          }}
+        />
+      ) : null}
+      {editModalVisible ? (
+        <Edit
+          visible={editModalVisible}
+          currentId={currentRecord.id}
+          recordIds={data.data.map((item) => item.id)}
+          close={() => {
             setEditModalVisible(false);
             setCurrentRecord({});
-          }} />
-        ) : null
-      }
+          }}
+        />
+      ) : null}
 
       <ChangeTitle
         visible={changeTitleModalVisible}
