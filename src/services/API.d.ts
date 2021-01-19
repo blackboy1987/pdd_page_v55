@@ -37,5 +37,9 @@ declare namespace API {
     status: string;
   };
 
-  export type Response = {};
+  export type AuthLogin = {
+    code: number;
+    msg: string;
+    token: string;
+  };
 }

@@ -33,6 +33,11 @@
     ],
   },
   {
+    path: '/auth',
+    layout: false,
+    component: './Auth',
+  },
+  {
     path: '/welcome',
     name: '概况',
     icon: 'smile',
@@ -62,16 +67,16 @@
         component: './product/list1',
       },
       {
-        path: '/admin/sub-page3',
+        path: '/product/upload',
         name: '发布记录',
         icon: 'smile',
-        component: './Welcome',
+        component: './product/upload/list',
       },
       {
-        path: '/admin/sub-page4',
+        path: '/product/info',
         name: '查看源宝贝',
         icon: 'smile',
-        component: './Welcome',
+        component: './product/info',
       },
     ],
   },

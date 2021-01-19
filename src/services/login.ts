@@ -23,3 +23,10 @@ export async function getFakeCaptcha(mobile: string) {
 export async function outLogin() {
   return request('/api/login/outLogin');
 }
+
+export async function authLogin(params: { [key: string]: any }) {
+  return request<API.AuthLogin>(`${Constants.baseUrl}authLogin`, {
+    method: 'POST',
+    data: params,
+  });
+}

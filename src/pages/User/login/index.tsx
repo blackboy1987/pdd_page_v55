@@ -1,11 +1,12 @@
-import { LockTwoTone, MailTwoTone, MobileTwoTone, UserOutlined } from '@ant-design/icons';
+import { LockTwoTone, UserOutlined, SwapOutlined } from '@ant-design/icons';
 import { Alert, message, Tabs } from 'antd';
 import React, { useState } from 'react';
-import ProForm, { ProFormCaptcha, ProFormCheckbox, ProFormText } from '@ant-design/pro-form';
+import ProForm, { ProFormText } from '@ant-design/pro-form';
 import { history, useModel } from 'umi';
 import type { LoginParamsType } from '@/services/login';
-import { fakeAccountLogin, getFakeCaptcha } from '@/services/login';
+import { fakeAccountLogin } from '@/services/login';
 import styles from './index.less';
+import { Constants } from '@/utils/constants';
 
 const LoginMessage: React.FC<{
   content: string;
@@ -37,7 +38,7 @@ const goto = () => {
 const Login: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [userLoginState, setUserLoginState] = useState<API.LoginStateType>({});
-  const [type, setType] = useState<string>('account');
+  const [type, setType] = useState<string>('auth');
   const { initialState, setInitialState } = useModel('@@initialState');
 
   const fetchUserInfo = async () => {
@@ -56,7 +57,7 @@ const Login: React.FC = () => {
       const msg = await fakeAccountLogin({ ...values, type });
 
       if (msg.status === 'ok') {
-        localStorage.setItem("token",msg.token||'');
+        localStorage.setItem('token', msg.token || '');
         message.success('登录成功！');
         await fetchUserInfo();
         goto();
@@ -80,7 +81,7 @@ const Login: React.FC = () => {
         }}
         submitter={{
           searchConfig: {
-            submitText: '登录',
+            submitText: type === 'auth' ? '授权登录' : '登录',
           },
           render: (_, dom) => dom.pop(),
           submitButtonProps: {
@@ -92,24 +93,26 @@ const Login: React.FC = () => {
           },
         }}
         onFinish={async (values) => {
-          handleSubmit(values as LoginParamsType);
+          if (type === 'auth') {
+            window.location.href = `${Constants.authUrl}`;
+          } else {
+            handleSubmit(values as LoginParamsType);
+          }
         }}
       >
         <Tabs activeKey={type} onChange={setType}>
-          <Tabs.TabPane
-            key="account"
-            tab='账户密码登录'
-          />
-          <Tabs.TabPane
-            key="mobile"
-            tab='手机号登录'
-          />
+          <Tabs.TabPane key="auth" tab="授权登录" />
+          <Tabs.TabPane key="account" tab="账户密码登录" />
         </Tabs>
-
+        {type === 'auth' && (
+          <div className={styles.auth}>
+            <img src="https://bootx-pdd.oss-cn-hangzhou.aliyuncs.com/logo.png?x-oss-process=style/100" />
+            <SwapOutlined style={{ fontSize: 32 }} />
+            <img src="https://bootx-pdd.oss-cn-hangzhou.aliyuncs.com/pdd.png?x-oss-process=style/100" />
+          </div>
+        )}
         {status === 'error' && loginType === 'account' && (
-          <LoginMessage
-            content={userLoginState.content||'账户或密码错误（admin/ant.design)'}
-          />
+          <LoginMessage content={userLoginState.content || '账户或密码错误'} />
         )}
         {type === 'account' && (
           <>
@@ -141,77 +144,6 @@ const Login: React.FC = () => {
             />
           </>
         )}
-
-        {status === 'error' && loginType === 'mobile' && <LoginMessage content="验证码错误" />}
-        {type === 'mobile' && (
-          <>
-            <ProFormText
-              fieldProps={{
-                size: 'large',
-                prefix: <MobileTwoTone className={styles.prefixIcon} />,
-              }}
-              name="mobile"
-              rules={[
-                {
-                  required: true,
-                  message: '手机号是必填项！',
-                },
-                {
-                  pattern: /^1\d{10}$/,
-                  message: '不合法的手机号！',
-                },
-              ]}
-            />
-            <ProFormCaptcha
-              fieldProps={{
-                size: 'large',
-                prefix: <MailTwoTone className={styles.prefixIcon} />,
-              }}
-              captchaProps={{
-                size: 'large',
-              }}
-              captchaTextRender={(timing, count) => {
-                if (timing) {
-                  return `${count} 获取验证码`;
-                }
-
-                return '获取验证码';
-              }}
-              name="captcha"
-              rules={[
-                {
-                  required: true,
-                  message: '验证码是必填项！',
-                },
-              ]}
-              onGetCaptcha={async (mobile) => {
-                const result = await getFakeCaptcha(mobile);
-
-                if (result === false) {
-                  return;
-                }
-
-                message.success('获取验证码成功！验证码为：1234');
-              }}
-            />
-          </>
-        )}
-        <div
-          style={{
-            marginBottom: 24,
-          }}
-        >
-          <ProFormCheckbox noStyle name="autoLogin">
-            自动登录
-          </ProFormCheckbox>
-          <a
-            style={{
-              float: 'right',
-            }}
-          >
-            忘记密码 ?
-          </a>
-        </div>
       </ProForm>
       <div className={styles.other}>
         <a

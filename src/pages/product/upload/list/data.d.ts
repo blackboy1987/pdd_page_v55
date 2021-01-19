@@ -1,10 +1,3 @@
-export type PddLog = {
-  code: number;
-  msg: string;
-  storeName: string;
-  productName: string;
-};
-
 export type TableListItem = {
   id: number;
   disabled?: boolean;
@@ -15,13 +8,11 @@ export type TableListItem = {
   desc: string;
   callNo: number;
   status: number;
-  publishStatus: number;
   createdDate: Date;
   createdAt: Date;
   progress: number;
   productCategoryName?: string;
   url?: string;
-  pddLogs: PddLog[];
 };
 
 export type TableListPagination = {
@@ -45,11 +36,6 @@ export type TableListParams = {
   filter?: Record<string, any[]>;
   sorter?: Record<string, any>;
 };
-export type ProductCategory = {
-  id: number;
-  name: string;
-  children: ProductCategory[];
-};
 
 export type Store = {
   createdDate: Date;
@@ -59,21 +45,9 @@ export type Store = {
   expired: boolean;
   url: string;
 };
-export type ProductCategoryTree = {
-  id: number;
-  name: string;
-  children: ProductCategoryTree[];
-};
 
-export type CrawlerUrlLogItem = {
-  id: number;
-  total: number;
-  success: number;
-  fail: number;
-  status: number;
-  pluginIds: string[];
-  type: number;
-  createdDate: Date;
-  product: Product;
-  pddProductCategoryNames: string[];
+export type StoreTree = {
+  title: string;
+  key: string;
+  children: StoreTree[];
 };

@@ -1,10 +1,22 @@
-import { Avatar, Input, Tag, Form, Select, Button, DatePicker, message, Modal, Empty } from 'antd';
+import {
+  Avatar,
+  Input,
+  Tag,
+  Form,
+  Select,
+  Button,
+  DatePicker,
+  message,
+  Modal,
+  Empty,
+  Tooltip,
+} from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import type { TableListItem } from './data.d';
-import { crawler, list, remove } from './service';
+import { crawler, list, remove, publish } from './service';
 import { defaultPaginationResult, PaginationResult, parseFormValues } from '@/utils/common';
 
 import oneSixEightEightLogo from '@/asserts/1688_logo.png';
@@ -17,6 +29,10 @@ import suningLogo from '@/asserts/suning.png';
 
 import styles from './index.less';
 import ChangeTitle from '@/pages/product/list/components/ChangeTitle';
+import ChangeCategory from '@/pages/product/list/components/ChangeCategory';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { StoreTree } from '@/pages/product/upload/list/data';
+import { listStoreTree } from '@/pages/product/upload/list/service';
 
 const List: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -27,6 +43,10 @@ const List: React.FC = () => {
   const [selectedRowsState, setSelectedRows] = useState<TableListItem[]>([]);
   const [changeTitleModalVisible, setChangeTitleModalVisible] = useState<boolean>(false);
   const [formValues, setFormValues] = useState<{ [key: string]: string }>({});
+  const [changeCategoryModalVisible, setChangeCategoryModalVisible] = useState<boolean>(false);
+  const [values, setValues] = useState<TableListItem>({});
+  const [storeTree, setStoreTree] = useState<StoreTree[]>([]);
+  const [storeId, setStoreId] = useState<number>();
 
   const load = async (params: { [key: string]: any }) => {
     setLoading(true);
@@ -34,6 +54,7 @@ const List: React.FC = () => {
       ...formValues,
       ...parseFormValues(form.getFieldsValue()),
       ...params,
+      storeId,
     });
     setSelectedRows([]);
     setData(result);
@@ -41,7 +62,13 @@ const List: React.FC = () => {
     setFormValues({
       ...parseFormValues(form.getFieldsValue()),
       ...params,
+      storeId,
     });
+  };
+
+  const fetchStore = async () => {
+    const result: StoreTree[] = await listStoreTree({});
+    setStoreTree(result);
   };
 
   useEffect(() => {
@@ -49,6 +76,7 @@ const List: React.FC = () => {
       pageNumber: 1,
       pageSize: 10,
     });
+    fetchStore();
   }, []);
 
   const search = () => {
@@ -81,6 +109,31 @@ const List: React.FC = () => {
     });
   };
 
+  const updateCategory = (record: TableListItem) => {
+    setChangeCategoryModalVisible(true);
+    setValues(record);
+  };
+
+  const upload = (record: TableListItem) => {
+    Modal.confirm({
+      title: '当前账号商品上传额度为10个，超过部分将会被过滤',
+      content: (
+        <>
+          剩余上传额度 <span style={{ color: 'red' }}>9</span> 个
+        </>
+      ),
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        const result = await publish({
+          ids: [record.id],
+          storeIds: [4],
+        });
+        console.log('result', result);
+      },
+    });
+  };
+
   const columns: ProColumns<TableListItem>[] = [
     {
       title: '序号',
@@ -92,6 +145,13 @@ const List: React.FC = () => {
       title: '宝贝ID',
       dataIndex: 'sn',
       width: 80,
+      renderText: (text) => (
+        <CopyToClipboard text={text} onCopy={() => message.success('宝贝ID已复制')}>
+          <Tooltip title="点击复制">
+            <span>{text}</span>
+          </Tooltip>
+        </CopyToClipboard>
+      ),
     },
     {
       title: '图片',
@@ -104,12 +164,13 @@ const List: React.FC = () => {
     {
       title: '宝贝标题',
       dataIndex: 'name',
+      renderText: (text) => <div dangerouslySetInnerHTML={{ __html: `${text}` }} />,
     },
     {
       title: '抓取价格',
       dataIndex: 'price',
       align: 'right',
-      width: 80,
+      width: 70,
     },
     {
       title: '平台',
@@ -139,16 +200,46 @@ const List: React.FC = () => {
     {
       title: '分类',
       dataIndex: 'productCategoryName',
+      width: 120,
+      renderText: (text, record) => {
+        return (
+          <>
+            <div>
+              <span>{text || '-'}</span>
+            </div>
+            <a onClick={() => updateCategory(record)}>修改</a>
+          </>
+        );
+      },
     },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 80,
+      width: 90,
       renderText: (text, record) => {
         if (text === 0) {
           return <Tag color="#2db7f5">采集中</Tag>;
         }
         if (text === 1) {
+          if (record.pddLogs.length > 0) {
+            const tags = record.pddLogs.map((log) => ({
+              code: log.code,
+              msg: log.msg,
+              storeName: log.storeName,
+            }));
+            return tags.map((tag) => {
+              if (tag.code === 0) {
+                return <Tag color="#87d068">发布成功</Tag>;
+              }
+              return (
+                <Tooltip title={`${tag.storeName}：${tag.msg}`}>
+                  <Tag color="#f50" style={{ marginBottom: 8 }}>
+                    发布失败
+                  </Tag>
+                </Tooltip>
+              );
+            });
+          }
           if (record.publishStatus === 10) {
             return <Tag color="#55acee">待发布</Tag>;
           }
@@ -177,16 +268,18 @@ const List: React.FC = () => {
       title: '采集时间',
       dataIndex: 'createdDate',
       valueType: 'dateTime',
-      width: 150,
+      width: 130,
     },
     {
       title: '操作',
       dataIndex: 'option',
-      width: 100,
+      width: 60,
       renderText: (_, record) => (
         <>
           <div>
-            <a href={record.url}>查看源</a>
+            <a href={record.url} target="_blank">
+              查看源
+            </a>
           </div>
           <div>
             <a onClick={() => clear(record)}>清理</a>
@@ -219,6 +312,11 @@ const List: React.FC = () => {
               重抓
             </a>
           </div>
+          {record.productCategoryName ? (
+            <div>
+              <a onClick={() => upload(record)}>上传</a>
+            </div>
+          ) : null}
         </>
       ),
     },
@@ -279,6 +377,23 @@ const List: React.FC = () => {
           </Button>
           <Button disabled={selectedRowsState.length === 0}>发布到拼多多</Button>
         </div>
+        <div className={styles.right}>
+          <Form.Item label="店铺">
+            <Select
+              style={{ width: 180 }}
+              defaultValue={storeId}
+              onSelect={(value) => setStoreId(value)}
+            >
+              {storeTree.map((storeGroup) => (
+                <Select.OptGroup key={storeGroup.key} label={storeGroup.title}>
+                  {storeGroup.children.map((store) => (
+                    <Select.Option value={store.key}>{store.title}</Select.Option>
+                  ))}
+                </Select.OptGroup>
+              ))}
+            </Select>
+          </Form.Item>
+        </div>
       </div>
       <ProTable<TableListItem>
         size="small"
@@ -292,6 +407,9 @@ const List: React.FC = () => {
         dataSource={data.data}
         rowSelection={{
           selectedRowKeys: selectedRowsState.map((item) => item.id),
+          getCheckboxProps: (record: TableListItem) => ({
+            disabled: !record.productCategoryName,
+          }),
           onChange: (_, selectedRows) => {
             setSelectedRows(selectedRows);
           },
@@ -321,6 +439,24 @@ const List: React.FC = () => {
           load({});
         }}
       />
+      {changeCategoryModalVisible && Object.keys(values).length > 0 ? (
+        <ChangeCategory
+          visible={changeCategoryModalVisible}
+          values={values}
+          close={() => setChangeCategoryModalVisible(false)}
+          callback={(selectedProductCategoryTrees) => {
+            setChangeCategoryModalVisible(false);
+            setValues({});
+            const newData = { ...data };
+            const data1 = newData.data.filter((item) => item.id === values.id);
+            if (data1) {
+              data1[0].productCategoryName =
+                selectedProductCategoryTrees[selectedProductCategoryTrees.length - 1].name;
+            }
+            setData(newData);
+          }}
+        />
+      ) : null}
     </PageContainer>
   );
 };
