@@ -29,15 +29,14 @@ import suningLogo from '@/asserts/suning.png';
 
 import styles from './index.less';
 import ChangeTitle from '@/pages/product/list/components/ChangeTitle';
-import ChangeCategory from '@/pages/product/list/components/ChangeCategory';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
-import { StoreTree } from '@/pages/product/upload/list/data';
-import { listStoreTree } from '@/pages/product/upload/list/service';
+import Edit from "@/pages/product/list/components/Edit";
 
 const List: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [form] = Form.useForm();
 
+  const [currentRecord, setCurrentRecord] = useState<TableListItem>({});
+  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<PaginationResult>(defaultPaginationResult);
   const [selectedRowsState, setSelectedRows] = useState<TableListItem[]>([]);
@@ -134,6 +133,11 @@ const List: React.FC = () => {
     });
   };
 
+  const edit=(record: TableListItem)=>{
+    setCurrentRecord(record);
+    setEditModalVisible(true);
+  }
+
   const columns: ProColumns<TableListItem>[] = [
     {
       title: '序号',
@@ -170,7 +174,7 @@ const List: React.FC = () => {
       title: '抓取价格',
       dataIndex: 'price',
       align: 'right',
-      width: 70,
+      width: 80,
     },
     {
       title: '平台',
@@ -317,6 +321,9 @@ const List: React.FC = () => {
               <a onClick={() => upload(record)}>上传</a>
             </div>
           ) : null}
+          <div>
+            <a onClick={() => edit(record)}>bianji </a>
+          </div>
         </>
       ),
     },
@@ -429,6 +436,26 @@ const List: React.FC = () => {
           emptyText: <Empty description="暂无数据" />,
         }}
       />
+      {
+        changeTitleModalVisible ? (
+          <ChangeTitle
+            visible={changeTitleModalVisible}
+            recordIds={selectedRowsState.map((item) => item.id)}
+            onClose={() => setChangeTitleModalVisible(false)}
+            callback={() => {
+              setChangeTitleModalVisible(false);
+            }}
+          />
+        ) : null
+      }
+      {
+        editModalVisible ? (
+          <Edit visible={editModalVisible} currentId={currentRecord.id} recordIds={data.data.map(item=>item.id)} close={()=>{
+            setEditModalVisible(false);
+            setCurrentRecord({});
+          }} />
+        ) : null
+      }
 
       <ChangeTitle
         visible={changeTitleModalVisible}

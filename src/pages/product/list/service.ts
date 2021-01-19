@@ -55,3 +55,11 @@ export async function listStoreTree(params?: { [key: string]: any }) {
     data: params,
   });
 }
+
+
+export async function queryDetail(params?: { [key: string]: any }) {
+  return request<ResponseResult>(`${Constants.baseUrl}product/detail`, {
+    method: 'POST',
+    data: params,
+  });
+}
