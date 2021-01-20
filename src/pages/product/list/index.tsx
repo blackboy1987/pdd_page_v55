@@ -31,13 +31,14 @@ import styles from './index.less';
 import ChangeTitle from '@/pages/product/list/components/ChangeTitle';
 import Edit from '@/pages/product/list/components/Edit';
 import { StoreTree } from '@/pages/product/upload/list/data';
+import ChangeCategory from "@/pages/product/list/components/ChangeCategory";
 
 const List: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [form] = Form.useForm();
 
   const [currentRecord, setCurrentRecord] = useState<TableListItem>({});
-  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+  const [editModalVisible, setEditModalVisible] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<PaginationResult>(defaultPaginationResult);
   const [selectedRowsState, setSelectedRows] = useState<TableListItem[]>([]);

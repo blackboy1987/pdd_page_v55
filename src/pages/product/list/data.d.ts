@@ -1,3 +1,5 @@
+import ex from "umi/dist";
+
 export type PddLog = {
   code: number;
   msg: string;
@@ -77,3 +79,72 @@ export type CrawlerUrlLogItem = {
   product: Product;
   pddProductCategoryNames: string[];
 };
+
+export type CrawlerProductImage = {
+  id: number;
+  images: string[];
+}
+
+export type Entry = {
+  name: string;
+  value: string;
+  image: string;
+}
+
+export type ParameterValue = {
+  group: string;
+  entries: Entry[];
+}
+
+export type CrawlerProductParameterValue = {
+  id: number;
+  parameterValues: ParameterValue[];
+}
+
+export type SpecificationValue = {
+  id: string;
+  name: string;
+  value: string;
+}
+
+export type Sku = {
+  sn: string;
+  stock: number;
+  price: number;
+  specificationValues: SpecificationValue[];
+}
+
+export type CrawlerProductSku = {
+  id: number;
+  skus: Sku[];
+}
+
+export type CrawlerSpecification = {
+  name: string;
+  options: string[];
+  entries: Entity[];
+}
+
+export type CrawlerProductSpecification = {
+  id: number;
+  crawlerSpecifications: CrawlerSpecification[];
+}
+
+export type CrawlerProductStore ={
+  url: string;
+  name: string;
+}
+
+export type ProductDetail = {
+  id: string;
+  sn: string;
+  name: string;
+  price: string;
+  stock: number;
+  crawlerProductImage: CrawlerProductImage;
+  crawlerProductIntroductionImage: CrawlerProductImage;
+  crawlerProductParameterValue: CrawlerProductParameterValue;
+  crawlerProductSku: CrawlerProductSku;
+  crawlerProductSpecification: CrawlerProductSpecification;
+  crawlerProductStore: CrawlerProductStore;
+}
