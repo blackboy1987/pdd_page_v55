@@ -7,7 +7,7 @@ import {
   message,
   Row,
   Col,
-  Cascader, Space, Tag, Button, Checkbox, InputNumber
+  Cascader, Tag, Button, Checkbox, InputNumber
 } from 'antd';
 import React, {useEffect, useState} from 'react';
 import {MinusCircleOutlined} from '@ant-design/icons';
