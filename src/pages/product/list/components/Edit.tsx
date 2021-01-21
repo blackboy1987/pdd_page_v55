@@ -1,8 +1,23 @@
-import {Drawer, Form, Tabs, Input, Alert, Table, InputNumber, Tag, Button, message, Row, Col} from 'antd';
+import {
+  Drawer,
+  Form,
+  Tabs,
+  Input,
+  Alert,
+  message,
+  Row,
+  Col,
+  Cascader, Space, Tag, Button, Checkbox, InputNumber
+} from 'antd';
 import React, {useEffect, useState} from 'react';
-import {queryDetail} from "@/pages/product/list/service";
+import {MinusCircleOutlined} from '@ant-design/icons';
+import {category, queryDetail} from "@/pages/product/list/service";
+import ProTable from '@ant-design/pro-table';
 import DragImage from "@/components/DragImage";
 import type { Entry, ProductDetail, Sku, SpecificationValue} from "@/pages/product/list/data";
+import ImageUpload from "@/components/ImageUpload";
+import {ProductCategoryTree} from "@/pages/product/list/data";
+import { update } from '../service';
 import {FooterToolbar} from "@ant-design/pro-layout";
 
 type ChangeTitleProps = {
@@ -16,6 +31,7 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
   const [form] = Form.useForm();
   const [values,setValues] = useState<ProductDetail>({});
   const [productId,setProductId] = useState<number>();
+  const [productCategoryTree, setProductCategoryTree] = useState<ProductCategoryTree[]>([]);
 
   const loadData = async (id: number) =>{
     setProductId(id);
@@ -30,8 +46,16 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
     }
   }
 
+  const fetchProductCategoryTree = async () => {
+    const result = await category({
+      pluginId: 'pddPlugin',
+    });
+    setProductCategoryTree(result);
+  };
+
   useEffect(()=>{
     loadData(currentId||21);
+    fetchProductCategoryTree();
   },[]);
 
   const filterSkus = (skus: Sku[],entry: Entry)=>{
@@ -75,6 +99,7 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
     labelCol: { span: 3 },
     wrapperCol: { span: 21 },
   };
+
   return (
     <Drawer
       width={window.innerWidth-180}
@@ -87,13 +112,19 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
       <Form
         form={form}
         {...layout}
-        initialValues={{
-          name: values.name,
+        initialValues={{...values}}
+        onFinish={(formValues)=>{
+          const result = update({
+            ...values,
+            ...formValues,
+          });
+          console.log(result);
         }}
       >
         <Tabs
           type='card'
           defaultActiveKey='3'
+          style={{marginBottom: 60}}
         >
           <Tabs.TabPane tab='基本信息' key={1}>
             <Form.Item
@@ -112,50 +143,175 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
             </Form.Item>
             <Form.Item
               label="商品分类"
-              name="username"
+              name="productCategoryIds"
               rules={[{ required: true, message: '请设置商品分类!' }]}
             >
-              <Input />
+              <Cascader
+                options={productCategoryTree}
+                fieldNames={{ label: 'name', value: 'id' }}
+                showSearch={{
+                  filter: (inputValue, path) =>
+                    path.some(
+                      (option) => option.name?.toLowerCase().indexOf(inputValue.toLowerCase()) > -1,
+                    ),
+                }}
+              />
             </Form.Item>
-            {JSON.stringify(values)}
           </Tabs.TabPane>
           <Tabs.TabPane tab='商品主图' key={2}>
             <Alert
               message="可添加图片，拖拽商品可更换顺序"
               description="图片格式仅支持JPEG/JPG/PNG，图片尺寸长宽比1:1且尺寸不低于480px，图片大小最高1M"
               type='info' style={{marginBottom:16}} showIcon />
-            <DragImage list={values.crawlerProductImage?.images || []} />
+            <div style={{marginBottom: 16}}>
+              <DragImage list={values.crawlerProductImage?.images || []}  onEnd={(items)=>{
+                setValues({
+                  ...values,
+                  crawlerProductImage:{
+                    ...values.crawlerProductImage,
+                    images:items.map(item=>item.content),
+                  }
+                })
+              }}/>
+            </div>
+            <ImageUpload
+              show={(values.crawlerProductImage?.images || []).length<10}
+              callback={(url: string)=> {
+              setValues({
+                ...values,
+                crawlerProductImage: {
+                  ...values.crawlerProductImage,
+                  images: [
+                    ...values.crawlerProductImage.images,
+                    url,
+                  ]
+                }
+              })
+            }
+            } />
           </Tabs.TabPane>
-          <Tabs.TabPane tab='商品详情' key={3}>
+          <Tabs.TabPane tab='商品详情图' key={3}>
+            <Form.Item>
+              <Input.TextArea placeholder='文字详情' autoSize={{minRows:8,maxRows:8}} maxLength={500} />
+            </Form.Item>
+            <div style={{marginBottom: 16}}>
+              <Alert
+                message="可添加图片，拖拽商品可更换顺序"
+                description="图片格式仅支持JPEG/JPG/PNG，图片尺寸宽在480-1200px之间，高在0-1500px之间，图片大小最高1M"
+                type='info' style={{marginBottom:16}} showIcon />
+              <DragImage list={values.crawlerProductIntroductionImage?.images || []} onEnd={(items)=>{
+                setValues({
+                  ...values,
+                  crawlerProductIntroductionImage:{
+                    ...values.crawlerProductIntroductionImage,
+                    images:items.map(item=>item.content),
+                  }
+                })
+              }}/>
+            </div>
+            <ImageUpload
+              show={(values.crawlerProductIntroductionImage?.images || []).length<60}
+              callback={(url: string)=>{
+                setValues({
+                  ...values,
+                  crawlerProductIntroductionImage:{
+                    ...values.crawlerProductIntroductionImage,
+                    images: [
+                      ...values.crawlerProductIntroductionImage.images,
+                      url,
+                    ],
+                  }
+                })
+              }
+              }/>
+          </Tabs.TabPane>
+          <Tabs.TabPane tab='商品属性' key={4}>
             {
               values.crawlerProductParameterValue?.parameterValues.map(item=>(
-                <Row gutter={16}>
+                <>
                   {
-                    item.entries.map(entry=>(
-                      <Col span={4}>
-                        <Form.Item label={entry.name} labelCol={{span:6}}>
-                          {
-                            entry.value.length<100 ? (
-                              <Input.TextArea autoSize={{minRows:1,maxRows:1}} value={entry.value} />
-                            ) : (
-                              <Input.TextArea autoSize={{minRows:6,maxRows:6}} value={entry.value} />
-                            )
-                          }
-
-                        </Form.Item>
-                      </Col>
+                    item.entries.map((entry,index)=>(
+                      <Row gutter={8} key={`${index}`} style={{ display: 'flex',}}>
+                        <Col span={3}>
+                          <Form.Item
+                            rules={[{ required: true, message: 'Missing first name' }]}
+                          >
+                            <Input value={entry.name} placeholder="" onChange={(e)=>{
+                              const newValues = {...values};
+                              const {parameterValues} = newValues.crawlerProductParameterValue;
+                              if(parameterValues){
+                                parameterValues[0].entries = [
+                                  ...values.crawlerProductParameterValue?.parameterValues[0].entries
+                                ]
+                                const current = parameterValues[0].entries.filter((entry,index1)=>index1===index);
+                                if(current){
+                                  current[0].name=e.target.value;
+                                }
+                              }
+                              setValues(newValues);
+                            }}/>
+                          </Form.Item>
+                        </Col>
+                        <Col span={21}>
+                          <Form.Item
+                            rules={[{ required: true, message: 'Missing last name' }]}
+                          >
+                            <Input
+                              value={entry.value}
+                              onChange={(e)=>{
+                                const newValues = {...values};
+                                const {parameterValues} = newValues.crawlerProductParameterValue;
+                                if(parameterValues){
+                                  parameterValues[0].entries = [
+                                    ...values.crawlerProductParameterValue?.parameterValues[0].entries
+                                  ]
+                                  const current = parameterValues[0].entries.filter((entry,index1)=>index1===index);
+                                  if(current){
+                                    current[0].value=e.target.value;
+                                  }
+                                }
+                                setValues(newValues);
+                              }}
+                              suffix={
+                                <a onClick={()=>{
+                                  const newValues = {...values};
+                                  const {parameterValues} = newValues.crawlerProductParameterValue;
+                                  if(parameterValues){
+                                    parameterValues[0].entries = [
+                                      ...values.crawlerProductParameterValue?.parameterValues[0].entries.filter((entry,index1)=>index1!==index),
+                                    ]
+                                  }
+                                  setValues(newValues);
+                                }
+                              }>
+                                <MinusCircleOutlined />
+                              </a>
+                            }
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
                     ))
                   }
-                </Row>
+                </>
               ))
             }
-            <Alert
-              message="可添加图片，拖拽商品可更换顺序"
-              description="图片格式仅支持JPEG/JPG/PNG，图片尺寸宽在480-1200px之间，高在0-1500px之间，图片大小最高1M"
-              type='info' style={{marginBottom:16}} showIcon />
-            <DragImage list={values.crawlerProductIntroductionImage?.images || []} />
+            <Button block onClick={()=>{
+              const newValues = {...values};
+              const {parameterValues} = newValues.crawlerProductParameterValue;
+              if(parameterValues){
+                parameterValues[0].entries = [
+                  ...values.crawlerProductParameterValue?.parameterValues[0].entries,
+                  {
+                    name:'',
+                    value:'',
+                  }
+                ]
+              }
+              setValues(newValues);
+            }}>增加属性</Button>
           </Tabs.TabPane>
-          <Tabs.TabPane tab='SKU信息' key={4}>
+          <Tabs.TabPane tab='SKU信息' key={5}>
             {
               (values.crawlerProductSpecification?.crawlerSpecifications||[]).map((item,index)=>(
                 <Form.Item label={`${item.name}`} key={`${item.name}`}>
@@ -167,17 +323,25 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
                 </Form.Item>
               ))
             }
-            <Table<Sku>
-              title={()=>(<h2>Sku总数：{values.crawlerProductSku?.skus?.length}</h2>)}
+            <ProTable<Sku>
+              headerTitle={<h2>Sku总数：{values.crawlerProductSku?.skus?.length}</h2>}
               size='small'
               bordered
-              rowKey='id'
+              search={false}
+              rowKey='sn'
+              options={false}
+              toolBarRender={() => [
+                <div>
+                  <Button type="primary" style={{marginRight:8}}>批量改价格</Button>
+                  <Button type="primary" style={{marginRight:8}}>批量改库存</Button>
+                </div>,
+              ]}
               columns={[
                 {
                   title:'#',
                   dataIndex: 'id',
                   width:60,
-                  render:(text,record,index)=><span>{index+1}</span>
+                  renderText:(id: number,record: Sku,index: number)=><span>{index+1}</span>
                 },
                 {
                   title:'编号',
@@ -187,7 +351,7 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
                 {
                   title:'规格',
                   dataIndex: 'specificationValues',
-                  render:(text)=>(
+                  renderText:(text: SpecificationValue[])=>(
                     <>
                       {
                         text.map((item: SpecificationValue)=>
@@ -202,24 +366,38 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
                   title:'价格',
                   dataIndex: 'price',
                   width: 120,
-                  render:text=><InputNumber value={text} step={1} precision={2} min={0} />
+                  renderText:(text: number,record: Sku)=><InputNumber value={text} step={1} precision={2} min={0} onChange={(value)=> {
+                    const crawlerProductSku = {...values.crawlerProductSku};
+                    const {skus} = crawlerProductSku;
+                    const currentSku = skus.filter((sku: Sku) => sku.sn === record.sn);
+                    console.log("currentSku",currentSku);
+                    if(currentSku&&value) {
+                      currentSku[0].price = value;
+                    }
+                    setValues({
+                      ...values,
+                      crawlerProductSku,
+                    })
+                  }
+                  } />
                 },{
                   title:'库存',
                   dataIndex: 'stock',
                   width: 120,
-                  render:text=><InputNumber value={text} step={1} precision={0} min={0} />
-                },{
-                  title:'操作',
-                  width: 60,
-                  render:text=>(
-                   <>
-                     {
-                       values.crawlerProductSku?.skus.length>0 ? (
-                         <a>移除</a>
-                       ) : null
-                     }
-                   </>
-                  )
+                  renderText:(text: number,record: Sku)=><InputNumber value={text} step={1} precision={0} min={0} onChange={(value)=> {
+                    const crawlerProductSku = {...values.crawlerProductSku};
+                    const {skus} = crawlerProductSku;
+                    const currentSku = skus.filter((sku: Sku) => sku.sn === record.sn);
+                    console.log("currentSku",currentSku);
+                    if(currentSku&&value) {
+                      currentSku[0].stock = value;
+                    }
+                    setValues({
+                      ...values,
+                      crawlerProductSku,
+                    })
+                  }
+                  }/>
                 }
               ]}
               dataSource={values.crawlerProductSku?.skus||[]}
@@ -227,8 +405,13 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
               scroll={{y:window.innerHeight-500}}
             />
           </Tabs.TabPane>
-          <Tabs.TabPane tab='服务承诺' key={5}>
-            服务承诺
+          <Tabs.TabPane tab='服务与承诺' key={6}>
+            <Form.Item label='7天无理由退换货' valuePropName='checked'>
+              <Checkbox />
+            </Form.Item>
+            <Form.Item label='假一赔十' valuePropName='checked'>
+              <Checkbox />
+            </Form.Item>
           </Tabs.TabPane>
         </Tabs>
         <FooterToolbar>
@@ -248,7 +431,7 @@ const Edit: React.FC<ChangeTitleProps> = ({ visible,currentId,recordIds,close })
               message.warn("当前已是最后一个商品")
             }
           }}>保存并跳转下一个商品</Button>
-          <Button type='primary'>保存</Button>
+          <Button type='primary' htmlType='submit'>保存</Button>
         </FooterToolbar>
       </Form>
     </Drawer>

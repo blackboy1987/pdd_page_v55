@@ -3,6 +3,7 @@ import { PaginationResponse, parsePagination, ResponseResult } from '@/utils/com
 import { Constants } from '@/utils/constants';
 import { ProductCategoryTree } from '@/pages/product/list/data';
 import { StoreTree } from '@/pages/product/upload/list/data';
+import qs from 'qs';
 
 export async function list(params?: { [key: string]: any }) {
   return request<PaginationResponse>(`${Constants.baseUrl}es/product/list`, {
@@ -56,10 +57,18 @@ export async function listStoreTree(params?: { [key: string]: any }) {
   });
 }
 
-
 export async function queryDetail(params?: { [key: string]: any }) {
   return request<ResponseResult>(`${Constants.baseUrl}product/detail`, {
     method: 'POST',
     data: params,
+  });
+}
+
+export async function update(params?: { [key: string]: any }) {
+  return request<ResponseResult>(`${Constants.baseUrl}product/update`, {
+    method: 'POST',
+    data: {
+      dataStr: JSON.stringify(params),
+    },
   });
 }
